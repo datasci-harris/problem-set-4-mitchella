@@ -1,5 +1,5 @@
 ---
-title: "Your Title"
+title: "Problem Set 4"
 format: 
   pdf:
     keep-tex: true
@@ -22,10 +22,29 @@ include-before-body:
 ## Style Points (10 pts)
 
 ## Submission Steps (10 pts)
+1. This problem set is a paired problem set.
+2. Play paper, scissors, rock to determine who goes first. Call that person Partner 1.
+• Partner 1 (Ella Montgomery; emontgomery2):
+• Partner 2 (name and cnet ID):
+3. Partner 1 will accept the ps4 and then share the link it creates with their partner.
+You can only share it with one partner so you will not be able to change it after your
+partner has accepted.
+4. “This submission is our work alone and complies with the 30538 integrity policy.” Add
+your initials to indicate your agreement: **EM** **__**
+5. “I have uploaded the names of anyone else other than my partner and I worked with
+on the problem set here” (1 point)
+6. Late coins used this pset: **__** Late coins left after submission: **__**
 
 ## Download and explore the Provider of Services (POS) file (10 pts)
 
-1. 
+1. We chose to include the following variables:
+- Hospital Type: **PRVDR_CTGRY_SBTYP_CD**,  **PRVDR_CTGRY_CD**
+- CMS Certification number: **PRVDR_NUM**
+- Facility name: **FAC_NAME**
+- Termination code: **PGM_TRMNTN_CD**
+- ZIP Code: **ZIP_CD**
+- State code: **STATE_CD**
+
 2. 
     a.
     b.
