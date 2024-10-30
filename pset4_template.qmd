@@ -167,7 +167,7 @@ alt.Chart(combined_df_pos).mark_bar().encode(
 )
 ```
 
-The plots show us that each individual row is a single hospital
+The plots show us that each individual row is a single hospital, because the plots are identical. In the first plot, we examined the number of rows for each year, and in the second, we examined the number of unique values for PRVDR_NUM, and they appear to be identical.
 
     a.
     b.
