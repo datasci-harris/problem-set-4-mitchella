@@ -25,12 +25,12 @@ include-before-body:
 1. This problem set is a paired problem set.
 2. Play paper, scissors, rock to determine who goes first. Call that person Partner 1.
 • Partner 1 (Ella Montgomery; emontgomery2):
-• Partner 2 (name and cnet ID):
+• Partner 2 (Mitch Bobbin; mbobbin):
 3. Partner 1 will accept the ps4 and then share the link it creates with their partner.
 You can only share it with one partner so you will not be able to change it after your
 partner has accepted.
 4. “This submission is our work alone and complies with the 30538 integrity policy.” Add
-your initials to indicate your agreement: **EM** **__**
+your initials to indicate your agreement: **EM** **MB**
 5. “I have uploaded the names of anyone else other than my partner and I worked with
 on the problem set here” (1 point)
 6. Late coins used this pset: **__** Late coins left after submission: **__**
@@ -47,9 +47,128 @@ on the problem set here” (1 point)
 
 2. 
     a.
+    ```{python}
+    import pandas as pd
+    import os
+    #only need to change base path when we're switching off working
+    base_path=r"C:\Users\Mitch\Documents\GitHub\problem-set-4-mitchella"
+
+    file_path2016=r"pos2016.csv"
+
+    path2016=os.path.join(base_path,file_path2016)
+    
+    #import the data for 2016 and store in a df
+    df_pos2016=pd.read_csv(path2016)
+
+    #filter to the correct provider category and subcategory:
+
+    df_pos2016=df_pos2016[(df_pos2016["PRVDR_CTGRY_SBTYP_CD"]==1) & (df_pos2016["PRVDR_CTGRY_CD"] == 1)]
+
+    df_pos2016.shape
+
+    ```
+
+There are 7,245 short term hospitals in this data.
+
+This number may not make sense. This is a huge overestimate of the Kaiser Family Foundation's figure of around 5,000 "short-term acute hospitals", which they also published in 2016. It could differ because the two sources classify short term hospitals differently, with the Kaiser Family Foundation having a stricter definition than Medicare and Medicaid.
+
     b.
 3. 
+
+```{python}
+file_path2017=r"pos2017.csv"
+
+path2017=os.path.join(base_path,file_path2017)
+    
+#import the data for 2016 and store in a df
+df_pos2017=pd.read_csv(path2017)
+
+#filter to the correct provider category and subcategory:
+
+df_pos2017=df_pos2017[(
+  df_pos2017["PRVDR_CTGRY_SBTYP_CD"]==1) & (
+    df_pos2017["PRVDR_CTGRY_CD"] == 1)]
+
+df_pos2017.shape
+```
+
+7,260 short term hospitals in 2017.
+
+```{python}
+file_path2018=r"pos2018.csv"
+
+path2018=os.path.join(base_path,file_path2018)
+    
+#import the data for 2018 and store in a df
+#for some reason we needed to specify encoding. used chatgpt
+#to troubleshoot when it wouldnt load in.
+df_pos2018=pd.read_csv(path2018,encoding="latin1")
+
+df_pos2018=df_pos2018[(
+  df_pos2018["ï»¿PRVDR_CTGRY_SBTYP_CD"]==1) & (
+    df_pos2018["PRVDR_CTGRY_CD"] == 1)]
+
+df_pos2018.shape
+
+```
+
+7,277 hospitals in 2018.
+
+```{python}
+file_path2019=r"pos2019.csv"
+
+path2019=os.path.join(base_path,file_path2019)
+    
+#import the data for 2018 and store in a df
+#for some reason we needed to specify encoding. used chatgpt
+#to troubleshoot when it wouldnt load in.
+df_pos2019=pd.read_csv(path2019,encoding="latin1")
+
+df_pos2019=df_pos2019[(
+  df_pos2019["ï»¿PRVDR_CTGRY_SBTYP_CD"]==1) & (
+    df_pos2019["PRVDR_CTGRY_CD"] == 1)]
+
+df_pos2019.shape
+```
+
+7,303 hospitals in 2019.
+
+```{python}
+
+#add each dfs associated year to every observation:
+df_pos2016["year"]=2016
+df_pos2017["year"]=2017
+df_pos2018["year"]=2018
+df_pos2019["year"]=2019
+#combine the dfs
+combined_df_pos=pd.concat([df_pos2016,df_pos2017,df_pos2018,df_pos2019])
+
+#plot the combined df
+import altair as alt
+alt.data_transformers.enable("vegafusion")
+alt.Chart(combined_df_pos).mark_bar().encode(
+  alt.X("year:O"),
+  alt.Y("count()")
+)
+
+```
+
+
 4. 
+
+```{python}
+#gives the number of unique values for PRVDR_NUM by year:
+print(combined_df_pos.groupby("year")["PRVDR_NUM"].nunique())
+#plot
+alt.data_transformers.enable("vegafusion")
+alt.Chart(combined_df_pos).mark_bar().encode(
+  alt.X("year:O"),
+  alt.Y("distinct(PRVDR_NUM):Q")
+)
+```
+
+The plots show us that each individual row is a single hospital
+
     a.
     b.
 
