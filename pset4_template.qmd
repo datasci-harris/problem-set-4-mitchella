@@ -60,19 +60,29 @@ on the problem set here” (1 point)
     #import the data for 2016 and store in a df
     df_pos2016=pd.read_csv(path2016)
 
+    df_pos2016.shape
+    df_pos2016.groupby("PRVDR_CTGRY_SBTYP_CD").count()
+
     #filter to the correct provider category and subcategory:
 
     df_pos2016=df_pos2016[(df_pos2016["PRVDR_CTGRY_SBTYP_CD"]==1) & (df_pos2016["PRVDR_CTGRY_CD"] == 1)]
 
     df_pos2016.shape
 
+    #take the number of rows from the filtered dataset over the
+    #number of rows in the unfiltered to get the proportion that
+    #are short-term hospitals:
+
+    7245/141557
+
     ```
 
-There are 7,245 short term hospitals in this data.
+There are 7,245 short term hospitals in this data. This represents about 5% of all providers in the data.
 
-This number may not make sense. This is a huge overestimate of the Kaiser Family Foundation's figure of around 5,000 "short-term acute hospitals", which they also published in 2016. It could differ because the two sources classify short term hospitals differently, with the Kaiser Family Foundation having a stricter definition than Medicare and Medicaid.
+
 
     b.
+    This number may not make sense. This is a huge overestimate of the Kaiser Family Foundation's figure of around 5,000 "short-term acute hospitals", which they also published in 2016. It could differ because the two sources classify short term hospitals differently, with the Kaiser Family Foundation having a stricter definition than Medicare and Medicaid.
 3. 
 
 ```{python}
@@ -119,7 +129,7 @@ file_path2019=r"pos2019.csv"
 
 path2019=os.path.join(base_path,file_path2019)
     
-#import the data for 2018 and store in a df
+#import the data for 2019 and store in a df
 #for some reason we needed to specify encoding. used chatgpt
 #to troubleshoot when it wouldnt load in.
 df_pos2019=pd.read_csv(path2019,encoding="latin1")
@@ -154,7 +164,7 @@ alt.Chart(combined_df_pos).mark_bar().encode(
 
 
 4. 
-
+    a.
 ```{python}
 #gives the number of unique values for PRVDR_NUM by year:
 print(combined_df_pos.groupby("year")["PRVDR_NUM"].nunique())
@@ -167,10 +177,9 @@ alt.Chart(combined_df_pos).mark_bar().encode(
 )
 ```
 
-The plots show us that each individual row is a single hospital, because the plots are identical. In the first plot, we examined the number of rows for each year, and in the second, we examined the number of unique values for PRVDR_NUM, and they appear to be identical.
 
-    a.
-    b.
+    b. 
+    The plots show us that each individual row is a single hospital, because the plots are identical. In the first plot, we examined the number of rows for each year, and in the second, we examined the number of unique values for PRVDR_NUM, and they appear to be identical.
 
 ## Identify hospital closures in POS file (15 pts) (*)
 
