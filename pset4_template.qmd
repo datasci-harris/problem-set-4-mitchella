@@ -231,9 +231,28 @@ yearly_zip_active_pos = combined_df_pos[combined_df_pos['PGM_TRMNTN_CD'] == 0].g
 ## Download Census zip code shapefile (10 pt) 
 
 1. 
-    a.
+    a. The five file types are as follows:
+    - .dbf, which contains attribute informaion in a table format
+    - .prj, which contains information about units and the Coordinate Reference System (CRS)
+    - .shp, which contains feature geometry
+    - .shx, which contains the positional index information
+    - .xml, which is written in a markup language and contains plaintext metadata and plainkeys
+
     b. 
 2. 
+
+```{python}
+import geopandas as gpd
+shp_path = 'C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp'
+
+geo_data = gpd.read_file(shp_path)
+
+#TX ZIPs start with 75-79
+tx_geo_data = geo_data[geo_data['ZIP_CODE'].astype(str).str.startswith(('75', '76', '77', '78', '79'))]
+
+
+
+```
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 
