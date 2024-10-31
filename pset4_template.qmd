@@ -261,6 +261,11 @@ print(corrected_closures.sort_values(by='FAC_NAME').head(10))
     - .xml, which is written in a markup language and contains plaintext metadata and plainkeys
 
     b. 
+    - .dbf: 6275 kb
+    - .prj: 1 kb  
+    - .shp: 817915 kb
+    - .shx: 259 kb
+    - .xml: 16 kb 
 2. 
 
 ```{python}
@@ -271,8 +276,11 @@ geo_data = gpd.read_file(shp_path)
 
 #TX ZIPs start with 75-79
 tx_geo_data = geo_data[geo_data['ZCTA5'].astype(str).str.startswith(('75', '76', '77', '78', '79'))]
+```
 
+```{python}
 
+df_pos2016
 
 ```
 
