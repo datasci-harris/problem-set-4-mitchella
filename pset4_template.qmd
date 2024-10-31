@@ -196,12 +196,10 @@ merged = active_2016[['PRVDR_NUM', 'FAC_NAME', 'ZIP_CD']].merge(
 )
 
 #filter out active hospitals
-closed_hospitals = merged[
-    (merged['year'] > 2016) & (merged['PGM_TRMNTN_CD'] != 0)
-].drop_duplicates(subset=['PRVDR_NUM'])
+closed_hospitals = merged[(merged['year'] > 2016) & (merged['PGM_TRMNTN_CD'] != 0)
+]
 
-print(closed_hospitals.shape[0])
-
+print(closed_hospitals['PRVDR_NUM'].nunique())
 ```
 
 There are 174 hospitals that fit this suspected closure definition.
@@ -215,18 +213,42 @@ print(closed_hospitals[['FAC_NAME_x', 'year']].sort_values(by='FAC_NAME_x').head
 3. 
 
 ```{python}
+closed_hospitals = closed_hospitals[['PRVDR_NUM', 'FAC_NAME_x', 'ZIP_CD_x', 'PRVDR_CTGRY_SBTYP_CD', 'PRVDR_CTGRY_CD', 'STATE_CD', 'PGM_TRMNTN_CD', 'year']]
+
 closed_hospitals.rename(columns={'FAC_NAME_x': 'FAC_NAME', 'ZIP_CD_x': 'ZIP_CD'}, inplace=True)
 
 #yearly count of active hospitals by ZIP code
 yearly_zip_active_pos = combined_df_pos[combined_df_pos['PGM_TRMNTN_CD'] == 0].groupby(['year', 'ZIP_CD']).size().reset_index(name='active_pos')
 
+#merge yearly active hospitals per zipcode and closed hospitals
+merged_2_3 = pd.merge(closed_hospitals, yearly_zip_active_pos, on=['ZIP_CD', 'year'], how='inner')
+#drops to 97
 
+#create yearly count of hospital per zip code in wide data format
+yearly_counts = merged_2_3.groupby(['ZIP_CD', 'year'])['PRVDR_NUM'].count().unstack(fill_value=0)
 
+#compare year to year change in total hospitals per zipcode
+yearly_counts['decreased17_18'] = (yearly_counts[2017] > yearly_counts[2018])  
+
+yearly_counts['decreased18_19'] = (yearly_counts[2018] > yearly_counts[2019])
+
+merged_2_3 = pd.merge(merged_2_3, yearly_counts, on='ZIP_CD', how='left') 
+
+#potential mergers/acquisitions 
+potential_mergers = merged_2_3[merged_2_3['decreased17_18'] & merged_2_3['decreased18_19'] == False]
+
+corrected_closures = merged_2_3[merged_2_3['decreased18_19'] == True]
 
 ```
-    a.
-    b.
+
+    a. There are 95 potential mergers.
+    b. Two hospitals remain; in all other zipcodes, the total number of hospitals did not decrease from year to year.
     c.
+
+```{python}
+print(corrected_closures.sort_values(by='FAC_NAME').head(10)) 
+
+```
 
 ## Download Census zip code shapefile (10 pt) 
 
@@ -248,7 +270,7 @@ shp_path = 'C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_u
 geo_data = gpd.read_file(shp_path)
 
 #TX ZIPs start with 75-79
-tx_geo_data = geo_data[geo_data['ZIP_CODE'].astype(str).str.startswith(('75', '76', '77', '78', '79'))]
+tx_geo_data = geo_data[geo_data['ZCTA5'].astype(str).str.startswith(('75', '76', '77', '78', '79'))]
 
 
 
