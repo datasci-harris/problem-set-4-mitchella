@@ -51,7 +51,7 @@ on the problem set here” (1 point)
     import pandas as pd
     import os
     #only need to change base path when we're switching off working
-    base_path=r"C:\Users\EM\Documents\GitHub\problem-set-4-mitchella"
+    base_path=r"C:\Users\Mitch\Documents\GitHub\problem-set-4-mitchella"
 
     file_path2016=r"pos2016.csv"
 
@@ -114,8 +114,10 @@ path2018=os.path.join(base_path,file_path2018)
 #to troubleshoot when it wouldnt load in.
 df_pos2018=pd.read_csv(path2018,encoding="latin1")
 
+#@Ella I think you and I have different names for the subgroup #column when we've exported. for some reason mine is loading 
+#this way
 df_pos2018=df_pos2018[(
-  df_pos2018["PRVDR_CTGRY_SBTYP_CD"]==1) & (
+  df_pos2018["ï»¿PRVDR_CTGRY_SBTYP_CD"]==1) & (
     df_pos2018["PRVDR_CTGRY_CD"] == 1)]
 
 df_pos2018.shape
@@ -135,7 +137,7 @@ path2019=os.path.join(base_path,file_path2019)
 df_pos2019=pd.read_csv(path2019,encoding="latin1")
 
 df_pos2019=df_pos2019[(
-  df_pos2019["PRVDR_CTGRY_SBTYP_CD"]==1) & (
+  df_pos2019["ï»¿PRVDR_CTGRY_SBTYP_CD"]==1) & (
     df_pos2019["PRVDR_CTGRY_CD"] == 1)]
 
 df_pos2019.shape
@@ -155,7 +157,8 @@ combined_df_pos=pd.concat([df_pos2016,df_pos2017,df_pos2018,df_pos2019])
 #plot the combined df
 import altair as alt
 alt.data_transformers.enable("vegafusion")
-alt.Chart(combined_df_pos).mark_bar().encode(
+
+observation_plot=alt.Chart(combined_df_pos).mark_bar().encode(
   alt.X("year:O"),
   alt.Y("count()")
 )
@@ -171,10 +174,14 @@ print(combined_df_pos.groupby("year")["PRVDR_NUM"].nunique())
 
 #plot
 alt.data_transformers.enable("vegafusion")
-alt.Chart(combined_df_pos).mark_bar().encode(
+
+hospital_plot=alt.Chart(combined_df_pos).mark_bar().encode(
   alt.X("year:O"),
   alt.Y("distinct(PRVDR_NUM):Q")
 )
+
+#display both plots
+hospital_plot | observation_plot
 ```
 
 
@@ -220,33 +227,56 @@ closed_hospitals.rename(columns={'FAC_NAME_x': 'FAC_NAME', 'ZIP_CD_x': 'ZIP_CD'}
 #yearly count of active hospitals by ZIP code
 yearly_zip_active_pos = combined_df_pos[combined_df_pos['PGM_TRMNTN_CD'] == 0].groupby(['year', 'ZIP_CD']).size().reset_index(name='active_pos')
 
-#merge yearly active hospitals per zipcode and closed hospitals
-merged_2_3 = pd.merge(closed_hospitals, yearly_zip_active_pos, on=['ZIP_CD', 'year'], how='inner')
-#drops to 97
 
-#create yearly count of hospital per zip code in wide data format
-yearly_counts = merged_2_3.groupby(['ZIP_CD', 'year'])['PRVDR_NUM'].count().unstack(fill_value=0)
+#do we need to do the same test with looking at from 16-17?
+#what if the zip code has 1 active hospital one year, and then 0
+#in the following year. Is there anything to group on for that
+#year and can we detect that closure in our data?
 
-#compare year to year change in total hospitals per zipcode
-yearly_counts['decreased17_18'] = (yearly_counts[2017] > yearly_counts[2018])  
+#can we amend our yearly_zip_active_pos df to look at the zips
+#where it goes from 1 active to 0, and add the missing years
+#along with the number 0 for active_pos. This is essential
+#because we won't be able to note zip codes that decrease if
+#they just drop out of the dataset.
 
-yearly_counts['decreased18_19'] = (yearly_counts[2018] > yearly_counts[2019])
+all_years = yearly_zip_active_pos['year'].unique()
+all_zip_codes = yearly_zip_active_pos['ZIP_CD'].unique()
+all_combinations = pd.MultiIndex.from_product([all_years, all_zip_codes], names=['year', 'ZIP_CD']).to_frame(index=False)
 
-merged_2_3 = pd.merge(merged_2_3, yearly_counts, on='ZIP_CD', how='left') 
+# Merge with the existing data to include missing combinations
+complete_yearly_zip_active_pos = all_combinations.merge(yearly_zip_active_pos, on=['year', 'ZIP_CD'], how='left')
 
-#potential mergers/acquisitions 
-potential_mergers = merged_2_3[merged_2_3['decreased17_18'] & merged_2_3['decreased18_19'] == False]
+# Fill missing 'active_pos' values with 0 for cases without observations
+complete_yearly_zip_active_pos['active_pos'] = complete_yearly_zip_active_pos['active_pos'].fillna(0)
 
-corrected_closures = merged_2_3[merged_2_3['decreased18_19'] == True]
+#identify zip codes where number of hospitals is changing
+
+zip_changes = complete_yearly_zip_active_pos.groupby("ZIP_CD")['active_pos'].nunique().reset_index()
+complete_yearly_zip_active_pos = complete_yearly_zip_active_pos.sort_values(['ZIP_CD', 'year'])
+
+#Calculate the difference in active_pos by year within each ZIP code
+complete_yearly_zip_active_pos['active_pos_diff'] = complete_yearly_zip_active_pos.groupby('ZIP_CD')['active_pos'].diff()
+
+#Identify ZIP codes with any decrease in active_pos over time.
+#If there's a zip code with a decrease, we can assume the closure
+#is "real" and not due to a M&A
+zip_codes_with_decrease = complete_yearly_zip_active_pos[complete_yearly_zip_active_pos['active_pos_diff'] < 0]['ZIP_CD'].unique()
+
+#Filter the closed_hospitals DataFrame for those in ZIP codes with a decrease in active_pos
+actual_closures = closed_hospitals[closed_hospitals['ZIP_CD'].isin(zip_codes_with_decrease)]
+
+len(actual_closures["PRVDR_NUM"].unique())
+
+#168 of the 174 are actual closures. That means 6 are M&As
 
 ```
 
-    a. There are 95 potential mergers.
-    b. Two hospitals remain; in all other zipcodes, the total number of hospitals did not decrease from year to year.
-    c.
+    a. There are 6 potential mergers.
+    b. 168 hospitals are suspected to be an actual closure, due to our methodology of filtering out any hospital that was in a zip code where they didn't experience a decrease in the number of hospitals.
 
+    c.
 ```{python}
-print(corrected_closures.sort_values(by='FAC_NAME').head(10)) 
+print(actual_closures.sort_values("FAC_NAME").head(10))
 
 ```
 
