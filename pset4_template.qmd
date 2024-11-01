@@ -51,7 +51,7 @@ on the problem set here” (1 point)
     import pandas as pd
     import os
     #only need to change base path when we're switching off working
-    base_path=r"C:\Users\Mitch\Documents\GitHub\problem-set-4-mitchella"
+    base_path=r"C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella"
 
     file_path2016=r"pos2016.csv"
 
@@ -300,6 +300,7 @@ print(actual_closures.sort_values("FAC_NAME").head(10))
 
 ```{python}
 import geopandas as gpd
+
 shp_path = 'C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp'
 
 geo_data = gpd.read_file(shp_path)
@@ -309,15 +310,45 @@ tx_geo_data = geo_data[geo_data['ZCTA5'].astype(str).str.startswith(('75', '76',
 ```
 
 ```{python}
+import matplotlib.pyplot as plt
 
-df_pos2016
+#group by zipcode and count number of unique POS numbers for each group
+pos_per_zip = df_pos2016.groupby('ZIP_CD')['PRVDR_NUM'].nunique().reset_index()
+pos_per_zip.columns = ['ZCTA5', '# of POS']
+pos_per_zip['ZCTA5'] = pos_per_zip['ZCTA5'].astype(str)
 
+
+tx_pos_per_zip = pos_per_zip[pos_per_zip['ZCTA5'].str.startswith(('75', '76', '77', '78', '79'))]
+
+tx_geo_data_1 = tx_geo_data.merge(tx_pos_per_zip, on='ZCTA5', how='left')
+
+tx_geo_data_1.plot(column = '# of POS',
+legend = True).set_axis_off()
 ```
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 
 1. 
+
+```{python}
+zips_all_centroids = geo_data.assign(centroid=geo_data.centroid)
+zips_all_centroids.shape
+```
+
+The resulting GeoDataFrame is 33120 x 7. The columns are taken from census [documentation](https://www.census.gov/programs-surveys/geography/technical-documentation/records-layout/2010-zcta-record-layout.html#par_textimage_0):
+- GEO_ID: Concatenation of 2010 State and County
+- ZCTA5: ZIP Code Tabulation Area
+- NAME: ZIP Code
+- LSAD: legal/statistical area description
+- CENSUSAREA:
+- geometry: polygonal shape of designated area
+- centroid: center point of designated area
+
 2. 
+
+```{python}
+
+```
 3. 
 4. 
     a.
