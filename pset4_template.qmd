@@ -301,7 +301,11 @@ print(actual_closures.sort_values("FAC_NAME").head(10))
 ```{python}
 import geopandas as gpd
 
-shp_path = 'C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp'
+shp_path = r"C:\\Users\\Mitch\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k.zip"
+
+#@Ella: I had to change the path a bit to get this to run. Adjust
+#as needed for your own purposes yours was:
+#shp_path = 'C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp'
 
 geo_data = gpd.read_file(shp_path)
 
@@ -362,8 +366,121 @@ The resulting GeoDataFrame is 33120 x 7. The columns are taken from census [docu
 ## Effects of closures on access in Texas (15 pts)
 
 1. 
-2. 
+
+```{python}
+#filter our actual_closures to only include tx zips:
+
+affected_tx_zips=actual_closures[actual_closures["STATE_CD"]=="TX"]
+
+#Each Zip code in Texas' number of closed hospitals:
+print(affected_tx_zips.groupby("ZIP_CD").size().sort_values(ascending=False))
+
+
+```
+
+
+
+2.
+
+```{python}
+#We're going to match the totals for each zip_code to the 
+#geo dataframe.
+#First, create the df of the zips and their associated hospital
+#closures:
+num_tx_zip_closures=affected_tx_zips.groupby("ZIP_CD").size().sort_values(ascending=False).reset_index()
+num_tx_zip_closures = num_tx_zip_closures.rename(columns={"ZIP_CD":"ZCTA5",0: "num_closures"})
+
+#df is displaying a decimal and 0 at the end so trim that off every entry:
+
+num_tx_zip_closures["ZCTA5"] = num_tx_zip_closures["ZCTA5"].astype(str).str.replace(".0", "")
+
+tx_geo_data["ZCTA5"]=tx_geo_data["ZCTA5"].astype(str)
+
+#merge the relevant dfs:
+
+tx_geo_data_closures = tx_geo_data.merge(num_tx_zip_closures, on="ZCTA5", how="left")
+print(tx_geo_data_closures.head())
+#looks like there might be an issue after the merge. But since
+#there's thousands of zips, in the geo df, and only 65 in in the
+#affected df, this is to be expected that there's NaNs. Here's
+#a check:
+print(tx_geo_data_closures[tx_geo_data_closures["ZCTA5"]=="77598"])
+#looks good. but need to replace NaNs with 0s:
+tx_geo_data_closures["num_closures"] = tx_geo_data_closures["num_closures"].fillna(0)
+
+tx_geo_data_closures.plot(column="num_closures",
+legend="num_closures")
+
+#can just use affected_tx_zips to id the unique zips listed:
+len(affected_tx_zips["ZIP_CD"].unique())
+
+```
+
+There are 33 different zip codes in Texas that experienced at least 1 hospital closure during 2016-2019.
+
 3. 
+
+```{python}
+#geodataframe of all affected zips:
+tx_geo_data_direct=tx_geo_data_closures[tx_geo_data_closures["num_closures"]>0]
+
+#need a different epsg since this one isn't able to use a 
+#buffer. used chatgpt to find one for me that will work.
+projected_gdf = tx_geo_data_direct.to_crs(epsg=5070)
+
+#apply a 10-mile buffer and retain attributes
+buffered_gdf = projected_gdf.copy()
+buffered_gdf["geometry"] = projected_gdf.buffer(10 * 1609.34)
+
+#convert back to EPSG:4269. will need it for the merge
+buffered_gdf = buffered_gdf.to_crs(epsg=4269)
+
+#spatial join, which will id the zones that the buffer touches:
+tx_geo_data_indirect = gpd.sjoin(tx_geo_data_closures, buffered_gdf, how="inner", predicate="intersects")
+
+#the resulting gdf has 2 ZIP_CD columns. The left one 
+#comes from our tx_geo_data_closures, and represents the 
+#zip codes that are intersected by the right gdfs buffer
+#from the zipcodes directly affected.
+tx_geo_data_indirect["ZCTA5_left"].nunique()
+#609 unique in the left column. However, this includes
+#our original 33 zips. Need to get rid of rows where
+#both our ZCTA5's are in the direct zips. can filter on 
+#the ZCTA_left, if they're in the direct's ZCTA, then drop them:
+
+direct_zips=tx_geo_data_direct["ZCTA5"]
+direct_zips=direct_zips.astype(str)
+
+tx_geo_data_indirect["ZCTA5_left"]=tx_geo_data_indirect["ZCTA5_left"].astype(str)
+
+tx_geo_data_indirect_only=tx_geo_data_indirect[~tx_geo_data_indirect["ZCTA5_left"].isin(direct_zips)]
+#used chatgpt to clean up this syntax
+
+print(tx_geo_data_indirect_only["ZCTA5_left"].nunique())
+```
+
+There are 576 zip codes indirectly affected by our 10 mile buffer zone.
+
 4. 
+
+```{python}
+
+fig, ax = plt.subplots(figsize=(10, 10))
+
+#Plot all ZIPs in white
+tx_geo_data.plot(ax=ax, color="white", edgecolor="black", linewidth=0.5, label="All ZIPs")
+
+#Plot the direct ZIPs in red
+tx_geo_data_direct.plot(ax=ax, color="red", edgecolor="black", linewidth=0.5, label="Direct ZIPs")
+
+#Plot the indirect ZIPs in yellow
+tx_geo_data_indirect_only.plot(ax=ax, color="yellow", edgecolor="black", linewidth=0.5, label="Indirect ZIPs")
+
+#Customize and show the legend
+plt.legend(loc="upper right", fontsize='small',title="Legend")
+ax.set_axis_off()
+plt.show()
+```
+
 
 ## Reflecting on the exercise (10 pts) 
