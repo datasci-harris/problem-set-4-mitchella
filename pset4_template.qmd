@@ -315,10 +315,15 @@ import matplotlib.pyplot as plt
 #group by zipcode and count number of unique POS numbers for each group
 pos_per_zip = df_pos2016.groupby('ZIP_CD')['PRVDR_NUM'].nunique().reset_index()
 pos_per_zip.columns = ['ZCTA5', '# of POS']
-pos_per_zip['ZCTA5'] = pos_per_zip['ZCTA5'].astype(str)
 
+#convert ZIP from float to string
+pos_per_zip['ZCTA5'] = pos_per_zip['ZCTA5'].astype(int)
+pos_per_zip['ZCTA5'] = pos_per_zip['ZCTA5'].astype(str).str.zfill(5)
 
 tx_pos_per_zip = pos_per_zip[pos_per_zip['ZCTA5'].str.startswith(('75', '76', '77', '78', '79'))]
+
+#format zip codes
+tx_geo_data['ZCTA5'] = tx_geo_data['ZCTA5'].astype(str).str.zfill(5)
 
 tx_geo_data_1 = tx_geo_data.merge(tx_pos_per_zip, on='ZCTA5', how='left')
 
@@ -340,16 +345,39 @@ The resulting GeoDataFrame is 33120 x 7. The columns are taken from census [docu
 - ZCTA5: ZIP Code Tabulation Area
 - NAME: ZIP Code
 - LSAD: legal/statistical area description
-- CENSUSAREA:
+- CENSUSAREA: calculated area derived from the ungeneralized area of each ZIP Code
 - geometry: polygonal shape of designated area
 - centroid: center point of designated area
 
 2. 
 
 ```{python}
+zips_texas_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith(('75', '76', '77', '78', '79'))]
 
+border_ranges = ( '870', '871', '872', '873', '874', '875', '876', '877', '878', '879', '880', '881', '882', '883', '884',  #New Mexico
+'73', '74',  #Oklahoma
+'716', '717', '718', '719', '720', '721', '722', '723', '724', '725', '726', '727', '728', '729',  #Arkansas
+'700', '701', '702', '703', '704', '705', '706', '707', '708', '709', '710', '711', '712', '713', '714', '715',  #Louisiana
+'75', '76', '77', '78', '79'
+)
+    
+zips_texas_borderstates_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith((border_ranges))]
+
+print(zips_texas_centroids['ZCTA5'].nunique())
+print(zips_texas_borderstates_centroids['ZCTA5'].nunique())
 ```
+
+The subset zips_texas_centroids has 1,935 unique values, while the borderstates subset has 4057 unique entries. The latter subset includes Texan ZIP Codes as well.
+
 3. 
+
+```{python}
+zips_with_hospitals = pos_per_zip[pos_per_zip['# of POS'] > 0]
+zips_withhospital_centroids = zips_texas_borderstates_centroids.merge(zips_with_hospitals, on='ZCTA5', how='inner')
+```
+
+For this case, an inner merge on the ZIP Code variable was used to exclusively retain ZIP Codes that have more than one hospital.
+
 4. 
     a.
     b.
