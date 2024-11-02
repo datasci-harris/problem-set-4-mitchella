@@ -303,8 +303,7 @@ import geopandas as gpd
 
 shp_path = r"C:\\Users\\Mitch\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k.zip"
 
-#@Ella: I had to change the path a bit to get this to run. Adjust
-#as needed for your own purposes yours was:
+#@Ella: I had to change the path a bit to get this to #run. Adjust as needed for your own purposes yours was:
 #shp_path = 'C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp'
 
 geo_data = gpd.read_file(shp_path)
@@ -471,13 +470,17 @@ fig, ax = plt.subplots(figsize=(10, 10))
 tx_geo_data.plot(ax=ax, color="white", edgecolor="black", linewidth=0.5, label="All ZIPs")
 
 #Plot the direct ZIPs in red
-tx_geo_data_direct.plot(ax=ax, color="red", edgecolor="black", linewidth=0.5, label="Direct ZIPs")
-
+tx_geo_data_direct.plot(ax=ax, color="red", edgecolor="black", linewidth=0.5, label="Hospital Closed within Zip")
+import matplotlib.patches as mpatches
 #Plot the indirect ZIPs in yellow
-tx_geo_data_indirect_only.plot(ax=ax, color="yellow", edgecolor="black", linewidth=0.5, label="Indirect ZIPs")
-
+tx_geo_data_indirect_only.plot(ax=ax, color="yellow", edgecolor="black", linewidth=0.5, label="Within 10 Miles of a Zipcode with a Closure")
+handles = [
+    mpatches.Patch(color="white", edgecolor="black", label="Unaffected by Hospital Closure"),
+    mpatches.Patch(color="red", edgecolor="black", label="Hospital Closed within Zip"),
+    mpatches.Patch(color="yellow", edgecolor="black", label="Within 10 Miles of a Zipcode with a Closure")
+]
 #Customize and show the legend
-plt.legend(loc="upper right", fontsize='small',title="Legend")
+plt.legend(handles=handles,loc="upper right", fontsize='small',title="Legend")
 ax.set_axis_off()
 plt.show()
 ```
