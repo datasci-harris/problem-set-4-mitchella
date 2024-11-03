@@ -583,7 +583,7 @@ plt.show()
 ## Reflecting on the exercise (10 pts) 
 
 1.
-Our method to identify true closures relies upon the number of pos in each zip code only changing when there's a true closure. The number of true closures could be smaller because of closures that occur in 2019 that haven't had a chance to appear in the following year as a merger and acquisition.
-Partner 1:
+Partner 1: Our method to identify true closures relies upon the number of pos in each zip code only changing when there's a true closure. The number of true closures could be smaller because of closures that occur in 2019 that haven't had a chance to appear in the following year as a merger and acquisition. We also could track another variable for each zip code to see if fundamentally the health care inputs are changing drastically for each of them after a closure. We may for instance include hospital bed count, and use a threshold of decrease to confirm a true closure.
+
 
 Partner 2: This modus operandi for measuring ZIP Codes affected by closures is fairly basic, only taking into account the distance of the area's centroid's distance from another ZIP code's centroid. The most common count of hospitals per ZIP Code is one, so using the coordinate points of idividual hospitals would give a more precise measure of distance without being too computationally onerous. 
