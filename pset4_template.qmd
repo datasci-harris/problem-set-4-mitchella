@@ -301,10 +301,10 @@ print(actual_closures.sort_values("FAC_NAME").head(10))
 ```{python}
 import geopandas as gpd
 
-shp_path = r"C:\\Users\\Mitch\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k.zip"
+#shp_path = r"C:\\Users\\Mitch\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k.zip"
 
 #@Ella: I had to change the path a bit to get this to #run. Adjust as needed for your own purposes yours was:
-#shp_path = 'C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp'
+shp_path = 'C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp'
 
 geo_data = gpd.read_file(shp_path)
 
@@ -383,8 +383,57 @@ For this case, an inner merge on the ZIP Code variable was used to exclusively r
 
 4. 
     a.
+    
+    ```{python}
+    import time
+    import fiona
+
+    #reference: https://stackoverflow.com/questions/30740046/calculate-distance-to-nearest-feature-with-geopandas
+
+    #crs conversion: 
+    #https://gis.stackexchange.com/questions/304061/identifying-coordinate-system-crs-from-projection-file-with-python
+    #c = fiona.open("C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp")
+    #crs = c.crs
+
+    zips_texas_centroids.to_crs(epsg=4269, inplace=True)
+    zips_withhospital_centroids.to_crs(epsg=4269, inplace=True)
+
+    ztc_subset = zips_texas_centroids.head(10)
+
+
+    #calculate distance to nearest hospital zip
+    def calculate_distances(subset_df, pos_df):
+      distances = []
+      for index, zip_geom in subset_df.iterrows():
+        pos_distances = pos_df[pos_df.index != index].distance(zip_geom['geometry'])
+        min_distance = pos_distances.min()
+        distances.append(min_distance)
+      return distances
+
+    start_time = time.time()
+    ztc_subset["closest_pos"] = calculate_distances(ztc_subset, zips_withhospital_centroids)
+    end_time = time.time()
+    elapsed_time = end_time - start_time   
+
+    print(elapsed_time) 
+    ```
+
+    There are 1935 observations in zips_texas_centroids, meaning that this operation with 10 observations would take 0.5% of the expected total time required for the full dataset.
+    It would take about 19348.05 seconds for the full dataset.
+
+
     b.
+    
+    ```{python}
+    
+    ```
+    
     c.
+    
+    ```{python}
+    
+    ```
+
 5. 
     a.
     b.
