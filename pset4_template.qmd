@@ -203,13 +203,13 @@ merged = active_2016[['PRVDR_NUM', 'FAC_NAME', 'ZIP_CD']].merge(
 )
 
 #filter out active hospitals
-closed_hospitals = merged[(merged['year'] > 2016) & (merged['PGM_TRMNTN_CD'] != 0)
+closed_hospitals = merged[(merged['year'] > 2016) & (merged['PGM_TRMNTN_CD'] == 1)
 ]
 
 print(closed_hospitals['PRVDR_NUM'].nunique())
 ```
 
-There are 174 hospitals that fit this suspected closure definition.
+There are 133 hospitals that fit this suspected closure definition.
 
 2. 
 
@@ -269,10 +269,11 @@ len(actual_closures["PRVDR_NUM"].unique())
 
 #168 of the 174 are actual closures. That means 6 are M&As
 
+
 ```
 
-    a. There are 6 potential mergers.
-    b. 168 hospitals are suspected to be an actual closure, due to our methodology of filtering out any hospital that was in a zip code where they didn't experience a decrease in the number of hospitals.
+    a. There are 22 potential mergers.
+    b. 111 hospitals are suspected to be an actual closure, due to our methodology of filtering out any hospital that was in a zip code where they didn't experience a decrease in the number of hospitals.
 
     c.
 ```{python}
