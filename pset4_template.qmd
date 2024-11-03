@@ -395,49 +395,60 @@ For this case, an inner merge on the ZIP Code variable was used to exclusively r
     #c = fiona.open("C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp")
     #crs = c.crs
 
-    zips_texas_centroids.to_crs(epsg=4269, inplace=True)
-    zips_withhospital_centroids.to_crs(epsg=4269, inplace=True)
-
+    zips_texas_centroids = zips_texas_centroids.to_crs(epsg=4269)
+    zips_withhospital_centroids = zips_withhospital_centroids.to_crs(epsg=4269)
     ztc_subset = zips_texas_centroids.head(10)
 
 
-    #calculate distance to nearest hospital zip
-    def calculate_distances(subset_df, pos_df):
-      distances = []
-      for index, zip_geom in subset_df.iterrows():
-        pos_distances = pos_df[pos_df.index != index].distance(zip_geom['geometry'])
-        min_distance = pos_distances.min()
-        distances.append(min_distance)
-      return distances
-
     start_time = time.time()
-    ztc_subset["closest_pos"] = calculate_distances(ztc_subset, zips_withhospital_centroids)
+
+    subset_join = gpd.sjoin_nearest(ztc_subset, zips_withhospital_centroids,
+    how='left', distance_col="distance")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time      
+    ```
+
+    There are 1935 observations in zips_texas_centroids, meaning that this operation with 10 observations would take 0.5% of the expected total time required for the full dataset.
+    The time elapesed for the subsetted dataframe was 3.37 seconds, so the full dataframe is expected to take 651.67 seconds.
+
+    b.
+    
+    ```{python}
+    
+    start_time = time.time()
+
+    full_join = gpd.sjoin_nearest(zips_texas_centroids, zips_withhospital_centroids,
+    how='left', distance_col="distance")
+
     end_time = time.time()
     elapsed_time = end_time - start_time   
 
     print(elapsed_time) 
     ```
-
-    There are 1935 observations in zips_texas_centroids, meaning that this operation with 10 observations would take 0.5% of the expected total time required for the full dataset.
-    It would take about 19348.05 seconds for the full dataset.
-
-
-    b.
     
-    ```{python}
-    
-    ```
-    
+    The join took 441 seconds, or 7.35 minutes. This is only about 68% of the original 651 second estimate; Our original prediction was off by almost a third of total predicted elapsed time.
+
     c.
-    
-    ```{python}
-    
-    ```
 
+    The .prj file is in degrees (UNIT["Degree",0.017453292519943295]). This is about 0.31 miles.
 5. 
     a.
+
+```{python}
+
+```
+
     b.
+
+```{python}
+
+```
     c.
+
+```{python}
+
+```
     
 ## Effects of closures on access in Texas (15 pts)
 
