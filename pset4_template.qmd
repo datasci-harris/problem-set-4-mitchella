@@ -203,13 +203,13 @@ merged = active_2016[['PRVDR_NUM', 'FAC_NAME', 'ZIP_CD']].merge(
 )
 
 #filter out active hospitals
-closed_hospitals = merged[(merged['year'] > 2016) & (merged['PGM_TRMNTN_CD'] != 0)
+closed_hospitals = merged[(merged['year'] > 2016) & (merged['PGM_TRMNTN_CD'] == 1)
 ]
 
 print(closed_hospitals['PRVDR_NUM'].nunique())
 ```
 
-There are 174 hospitals that fit this suspected closure definition.
+There are 133 hospitals that fit this suspected closure definition.
 
 2. 
 
@@ -260,10 +260,11 @@ len(actual_closures["PRVDR_NUM"].unique())
 
 #168 of the 174 are actual closures. That means 6 are M&As
 
+
 ```
 
-    a. There are 6 potential mergers.
-    b. 168 hospitals are suspected to be an actual closure, due to our methodology of filtering out any hospital that was in a zip code where they didn't experience a decrease in the number of hospitals.
+    a. There are 22 potential mergers.
+    b. 111 hospitals are suspected to be an actual closure, due to our methodology of filtering out any hospital that was in a zip code where they didn't experience a decrease in the number of hospitals.
 
     c.
 ```{python}
@@ -292,10 +293,10 @@ print(actual_closures.sort_values("FAC_NAME").head(10))
 ```{python}
 import geopandas as gpd
 
-shp_path = r"C:\\Users\\Mitch\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k.zip"
+#shp_path = r"C:\\Users\\Mitch\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k.zip"
 
 #@Ella: I had to change the path a bit to get this to #run. Adjust as needed for your own purposes yours was:
-#shp_path = 'C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp'
+shp_path = 'C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp'
 
 geo_data = gpd.read_file(shp_path)
 
@@ -309,10 +310,15 @@ import matplotlib.pyplot as plt
 #group by zipcode and count number of unique POS numbers for each group
 pos_per_zip = df_pos2016.groupby('ZIP_CD')['PRVDR_NUM'].nunique().reset_index()
 pos_per_zip.columns = ['ZCTA5', '# of POS']
-pos_per_zip['ZCTA5'] = pos_per_zip['ZCTA5'].astype(str)
 
+#convert ZIP from float to string
+pos_per_zip['ZCTA5'] = pos_per_zip['ZCTA5'].astype(int)
+pos_per_zip['ZCTA5'] = pos_per_zip['ZCTA5'].astype(str).str.zfill(5)
 
 tx_pos_per_zip = pos_per_zip[pos_per_zip['ZCTA5'].str.startswith(('75', '76', '77', '78', '79'))]
+
+#format zip codes
+tx_geo_data['ZCTA5'] = tx_geo_data['ZCTA5'].astype(str).str.zfill(5)
 
 tx_geo_data_1 = tx_geo_data.merge(tx_pos_per_zip, on='ZCTA5', how='left')
 
@@ -334,24 +340,116 @@ The resulting GeoDataFrame is 33120 x 7. The columns are taken from census [docu
 - ZCTA5: ZIP Code Tabulation Area
 - NAME: ZIP Code
 - LSAD: legal/statistical area description
-- CENSUSAREA:
+- CENSUSAREA: calculated area derived from the ungeneralized area of each ZIP Code
 - geometry: polygonal shape of designated area
 - centroid: center point of designated area
 
 2. 
 
 ```{python}
+zips_texas_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith(('75', '76', '77', '78', '79'))]
 
+border_ranges = ( '870', '871', '872', '873', '874', '875', '876', '877', '878', '879', '880', '881', '882', '883', '884',  #New Mexico
+'73', '74',  #Oklahoma
+'716', '717', '718', '719', '720', '721', '722', '723', '724', '725', '726', '727', '728', '729',  #Arkansas
+'700', '701', '702', '703', '704', '705', '706', '707', '708', '709', '710', '711', '712', '713', '714', '715',  #Louisiana
+'75', '76', '77', '78', '79'
+)
+    
+zips_texas_borderstates_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith((border_ranges))]
+
+print(zips_texas_centroids['ZCTA5'].nunique())
+print(zips_texas_borderstates_centroids['ZCTA5'].nunique())
 ```
+
+The subset zips_texas_centroids has 1,935 unique values, while the borderstates subset has 4057 unique entries. The latter subset includes Texan ZIP Codes as well.
+
 3. 
+
+```{python}
+zips_with_hospitals = pos_per_zip[pos_per_zip['# of POS'] > 0]
+zips_withhospital_centroids = zips_texas_borderstates_centroids.merge(zips_with_hospitals, on='ZCTA5', how='inner')
+```
+
+For this case, an inner merge on the ZIP Code variable was used to exclusively retain ZIP Codes that have more than one hospital.
+
 4. 
     a.
+    
+    ```{python}
+    import time
+    import fiona
+
+    #crs conversion: 
+    #https://gis.stackexchange.com/questions/304061/identifying-coordinate-system-crs-from-projection-file-with-python
+    #c = fiona.open("C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp")
+    #crs = c.crs
+
+    zips_texas_centroids = zips_texas_centroids.to_crs(epsg=4269)
+    zips_withhospital_centroids = zips_withhospital_centroids.to_crs(epsg=4269)
+    ztc_subset = zips_texas_centroids.head(10)
+
+
+    start_time = time.time()
+
+    subset_join = gpd.sjoin_nearest(ztc_subset, zips_withhospital_centroids,
+    how='left', distance_col="distance")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time      
+    ```
+
+    There are 1935 observations in zips_texas_centroids, meaning that this operation with 10 observations would take 0.5% of the expected total time required for the full dataset.
+    The time elapesed for the subsetted dataframe was 3.37 seconds, so the full dataframe is expected to take 651.67 seconds.
+
     b.
+    
+    ```{python}
+    
+    start_time = time.time()
+
+    full_join = gpd.sjoin_nearest(zips_texas_centroids, zips_withhospital_centroids,
+    how='left', distance_col="distance")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time   
+
+    print(elapsed_time) 
+    ```
+    
+    The join took 441 seconds, or 7.35 minutes. This is only about 68% of the original 651 second estimate; our original prediction was off by almost a third of total predicted elapsed time.
+
     c.
+    The .prj file is in degrees (UNIT["Degree",0.017453292519943295]). This is about 1.2 miles.
 5. 
     a.
-    b.
+
+```{python}
+full_join = full_join.rename(columns={'ZCTA5_left': 'ZCTA5'})
+avg_distances = full_join.groupby('ZCTA5')['distance'].mean().reset_index()
+avg_distances = avg_distances.rename(columns={'distance': 'avg_pos_dist'})
+
+full_join_avg = full_join.merge(avg_distances, on='ZCTA5')
+```
+
+   The EPSG:4269 conversion in the previous step left distance measured in degrees of lat/long.
+    
+    b. 
+
+```{python}
+full_join_avg['avg_pos_dist_miles'] = full_join_avg['avg_pos_dist'] * 69
+full_join_avg['avg_pos_dist_miles'].head
+
+```
+
+  The conversion factor for degrees to miles is [about 69](https://gis.stackexchange.com/questions/142326/calculating-longitude-length-in-miles), so each degree measure is converted to miles by multiplication with this conversion factor. The nearest neighbor centroid calculation we did changed our data so that some ZIP codes have multiple nearest neighbors, and ZIP codes with multiple hospitals have several entries in the data with a distance from the hospital measure of 0. These two factors mean that the average provider of service distance column that was just added is useful for ZIP Codes that do not have a hospital, but redundant for areas with a hospital.
+
     c.
+
+```{python}
+full_join_avg.plot(column="avg_pos_dist_miles", legend=True).set_axis_off()
+```
+
     
 ## Effects of closures on access in Texas (15 pts)
 
@@ -486,3 +584,6 @@ plt.show()
 
 1.
 Our method to identify true closures relies upon the number of pos in each zip code only changing when there's a true closure. The number of true closures could be smaller because of closures that occur in 2019 that haven't had a chance to appear in the following year as a merger and acquisition.
+Partner 1:
+
+Partner 2: This modus operandi for measuring ZIP Codes affected by closures is fairly basic, only taking into account the distance of the area's centroid's distance from another ZIP code's centroid. The most common count of hospitals per ZIP Code is one, so using the coordinate points of idividual hospitals would give a more precise measure of distance without being too computationally onerous. 
