@@ -33,7 +33,7 @@ partner has accepted.
 your initials to indicate your agreement: **EM** **MB**
 5. “I have uploaded the names of anyone else other than my partner and I worked with
 on the problem set here” (1 point)
-6. Late coins used this pset: **__** Late coins left after submission: **__**
+6. Late coins used this pset: **1** Late coins left after submission: **2**
 
 ## Download and explore the Provider of Services (POS) file (10 pts)
 
@@ -116,7 +116,7 @@ df_pos2018=pd.read_csv(path2018,encoding="latin1")
 
 #@Ella I think you and I have different names for the #subgroup column when we've exported. for some reason #mine is loading this way
 df_pos2018=df_pos2018[(
-  df_pos2018["ï»¿PRVDR_CTGRY_SBTYP_CD"]==1) & (
+  df_pos2018["PRVDR_CTGRY_SBTYP_CD"]==1) & (
     df_pos2018["PRVDR_CTGRY_CD"] == 1)]
 
 df_pos2018.shape
@@ -137,7 +137,7 @@ path2019=os.path.join(base_path,file_path2019)
 df_pos2019=pd.read_csv(path2019,encoding="latin1")
 
 df_pos2019=df_pos2019[(
-  df_pos2019["ï»¿PRVDR_CTGRY_SBTYP_CD"]==1) & (
+  df_pos2019["PRVDR_CTGRY_SBTYP_CD"]==1) & (
     df_pos2019["PRVDR_CTGRY_CD"] == 1)]
 
 df_pos2019.shape
@@ -258,13 +258,13 @@ actual_closures = closed_hospitals[closed_hospitals['ZIP_CD'].isin(zip_codes_wit
 
 len(actual_closures["PRVDR_NUM"].unique())
 
-#168 of the 174 are actual closures. That means 6 are M&As
+#130 of the 133 are actual closures. That means 3 are M&As
 
 
 ```
 
-    a. There are 22 potential mergers.
-    b. 111 hospitals are suspected to be an actual closure, due to our methodology of filtering out any hospital that was in a zip code where they didn't experience a decrease in the number of hospitals.
+    a. There are 3 potential mergers.
+    b. 130 hospitals are suspected to be an actual closure, due to our methodology of filtering out any hospital that was in a zip code where they didn't experience a decrease in the number of hospitals.
 
     c.
 ```{python}
@@ -379,11 +379,6 @@ For this case, an inner merge on the ZIP Code variable was used to exclusively r
     ```{python}
     import time
     import fiona
-
-    #crs conversion: 
-    #https://gis.stackexchange.com/questions/304061/identifying-coordinate-system-crs-from-projection-file-with-python
-    #c = fiona.open("C:\\Users\\EM\\Documents\\GitHub\\problem-set-4-mitchella\\gz_2010_us_860_00_500k\\gz_2010_us_860_00_500k.shp")
-    #crs = c.crs
 
     zips_texas_centroids = zips_texas_centroids.to_crs(epsg=4269)
     zips_withhospital_centroids = zips_withhospital_centroids.to_crs(epsg=4269)
@@ -583,7 +578,9 @@ plt.show()
 ## Reflecting on the exercise (10 pts) 
 
 1.
-Partner 1: Our method to identify true closures relies upon the number of pos in each zip code only changing when there's a true closure. The number of true closures could be smaller because of closures that occur in 2019 that haven't had a chance to appear in the following year as a merger and acquisition. We also could track another variable for each zip code to see if fundamentally the health care inputs are changing drastically for each of them after a closure. We may for instance include hospital bed count, and use a threshold of decrease to confirm a true closure.
+Partner 1
+Our method to identify true closures relies upon the number of pos in each zip code only changing when there's a true closure. The number of true closures could be smaller because of closures that occur in 2019 that haven't had a chance to appear in the following year as a merger and acquisition. We also could track another variable for each zip code to see if fundamentally the health care inputs are changing drastically for each of them after a closure. We may for instance include hospital bed count, and use a threshold of decrease to confirm a true closure.
 
 
-Partner 2: This modus operandi for measuring ZIP Codes affected by closures is fairly basic, only taking into account the distance of the area's centroid's distance from another ZIP code's centroid. The most common count of hospitals per ZIP Code is one, so using the coordinate points of idividual hospitals would give a more precise measure of distance without being too computationally onerous. 
+Partner 2
+This modus operandi for measuring ZIP Codes affected by closures is fairly basic, only taking into account the distance of the area's centroid's distance from another ZIP code's centroid. The most common count of hospitals per ZIP Code is one, so using the coordinate points of idividual hospitals would give a more precise measure of distance without being too computationally onerous. 
